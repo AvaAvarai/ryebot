@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "discord.h"
+#include "guild.h"
 
 #define FILENAME "jokes.txt"
 #define PREFIX "$"
@@ -98,7 +99,7 @@ void print_usage(void)
 
 void on_ready(struct discord *client, const struct discord_ready *event)
 {
-    log_info("DoughBot succesfully connected to Discord as %s#%s!",
+    log_info("ryebot succesfully connected to Discord as %s#%s!",
              event->user->username, event->user->discriminator);
 
     struct discord_activity activities[] = {
@@ -129,6 +130,15 @@ void on_reaction_add(struct discord *client, const struct discord_message_reacti
         return;
 
     discord_create_reaction(client, event->channel_id, event->message_id, event->emoji->id, event->emoji->name, NULL);
+}
+
+void timed_message(struct discord *client, struct discord_timer* timer)
+{
+    //printf("###TEST TEST TEST###");
+
+    int r = rand() % num_global;
+    struct discord_create_message params = { .content = lines_global[r] };
+    discord_create_message(client, 769381887608619009, &params, NULL); // hardcoded currently to channel, should move to config file
 }
 
 void on_reaction_remove(struct discord *client, const struct discord_message_reaction_remove *event)
@@ -162,6 +172,7 @@ int main(int argc, char *argv[])
     sizes.length+=2; // maybe this caused the corrupted size vs prev size error?
     char** jokes = loadLines(&ptr, sizes.number, sizes.length);
 
+    discord_timer_interval(client, timed_message, NULL, 0, 3600000, -1);
     discord_set_on_ready(client, &on_ready);
     discord_set_prefix(client, PREFIX);
     discord_set_on_message_reaction_remove(client, &on_reaction_remove);
